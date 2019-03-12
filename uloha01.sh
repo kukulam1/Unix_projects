@@ -1,5 +1,3 @@
-echo $1
-echo $2
 if [ "$1" = "--typ" ]; then
       
    if test -h "$2"; then
