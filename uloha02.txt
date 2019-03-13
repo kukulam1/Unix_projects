@@ -1,0 +1,11 @@
+V poslednim pripade testshiftu zbyvaji 2 argumenty a volame shift 3. V definici shiftu si muzeme najit ze pokud zbyva n argumentu, tak muzeme volat shift s max parametrem n.
+
+$# pocet zbyvajicich argumentu (shift n zmensi o n)
+${#promenna} pocet znaku v promenne
+${!promenna} neprima sustituce promenne
+${promenna:-vyraz} shell nejdriv zkusi najit promennou pokud existuje, tak ji zasubstituuje a pokracuje stejne na dalsi prikaz, pokud pormenna neexistuje, pote preda zasubstituuje vyraz za -
+${promenna:cislo} cislo pocet znaku ktere ma shell uriznout na zacatku promenne
+${promenna:cislo:cislo} to same + druhe cislo udava pocet znaku ktere ma shell vypsat
+${promenna/vyraz/text} nahradi prvni vyskyt vyrazu v promenne textem
+${promenna//vyraz/text} nahradi vsechny vyskytu vyrazu v promenne textem
+@ projede postupne vsechny argumenty
