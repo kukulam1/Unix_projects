@@ -1,0 +1,20 @@
+#!/bin/bash -f
+BEGIN 	{
+RS="<"
+}
+
+/^[Aa] / {
+     l = substr($i, 1)
+     gsub(".*[Hh][Rr][Ee][Ff][ \n]*=[ \n]*", "", l)
+     gsub(">.*", "", l)
+     gsub("\"", "", l)
+     gsub("'", "", l)
+     gsub("&quot;", "\"", l)
+     gsub("&lt;", "<", l)
+     gsub("&gt;", ">", l)
+     gsub("&amp;", "&" l)
+     print l    
+}
+
+END   {
+}
