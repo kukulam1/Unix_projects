@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# no parameter
+if [[ $2 = '' ]] ; then 
+# standart input 
+  if [[ $1 = '' ]] ; then
+    x=$RANDOM
+    tee > /tmp/my_tac$x
+    sed '1!G;h;$!d' /tmp/my_tac$x
+    rm /tmp/my_tac$x
+# file input
+  else
+    sed '1!G;h;$!d' "$1"
+  fi
+# with parameter  
+else
+# standart input
+  if [[ $3 = '' ]] ; then
+  x=$RANDOM
+  tee > /tmp/my_tac2$x
+  sed '1!G;h;$!d' /tmp/my_tac2$x > /tmp/my_tac$x
+  while [ -s /tmp/my_tac$x ] ; do
+     grep ^ -m $2 /tmp/my_tac$x | sed '1!G;h;$!d'
+     tail -n +$(expr $2 + 1) /tmp/my_tac$x > /tmp/my_tac2$x
+     cat /tmp/my_tac2$x > /tmp/my_tac$x
+  done
+  rm /tmp/my_tac$x
+  rm /tmp/my_tac2$x
+# file input
+  else
+    x=$RANDOM
+    sed '1!G;h;$!d' "$3" > /tmp/my_tac$x
+    while [ -s /tmp/my_tac$x ] ; do
+       grep ^ -m $2 /tmp/my_tac$x | sed '1!G;h;$!d'
+       tail -n +$(expr $2 + 1) /tmp/my_tac$x > /tmp/my_tac2$x
+       cat /tmp/my_tac2$x > /tmp/my_tac$x
+    done
+    rm /tmp/my_tac$x
+    rm /tmp/my_tac2$x
+  fi
+fi

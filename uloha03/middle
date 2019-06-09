@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#nejsou spravne parametry
+if [[ $1 = '' ]] || [[ $2 = '' ]] ; then
+  echo "Spatne zadane parametry"
+  exit 1
+fi
+x=$RANDOM
+case $1 in
+  -l | --lines)
+       m=$(echo $2 | cut -d '-' -f 1)
+       n=$(echo $2 | cut -d '-' -f 2)    
+       if [[ $3 = '' ]] ; then
+          head -n $n | tail -n +$m 
+       else
+          head -n $n "$3" | tail -n +$m 
+       fi 
+  ;;
+  -f | --fraction)
+       a=$(echo $2 | cut -d '/' -f 1)   
+       b=$(echo $2 | cut -d '/' -f 2)   
+       c=$(echo $3 | cut -d '/' -f 1)
+       d=$(echo $3 | cut -d '/' -f 2)
+       if [[ $4 = '' ]] ; then
+          tee > /tmp/middle$x
+          n=$( grep -c ^ /tmp/middle$x)
+#  matematicke zaokrouhleni dolu a nahoru, zakrouhleni probehne uz behem behu, ne az konci, tedy vysledek je pak spatne
+# na prikladech zjednodusene reseni funguje
+#  start_print=$(echo "$(( ($n * $a) - ( $b / 2 )/ $b ))") 
+#  end_print=$(echo "$(( ($n * $c) + (($d - 1) / 2) / $d ))")     
+          start_print=$(echo "$(( ($n * $a) / $b ))") 
+          end_print=$(echo "$(( ($n * $c) / $d ))")
+          cat /tmp/middle$x | head -n $end_print | tail -n +$start_print  
+          rm /tmp/middle$x
+       else
+          n=$( grep -c ^ "$4")
+          start_print=$(echo "$(( ($n * $a) / $b ))")
+          end_print=$(echo "$(( ($n * $c) / $d ))")
+          head -n $end_print "$4" | tail -n +$start_print
+       fi
+  ;;
+    -p | --part)
+      a=$(echo $2 | cut -d '/' -f 1)
+      b=$(echo $2 | cut -d '/' -f 2)
+      if [[ $3 = '' ]] ; then
+         tee > /tmp/middle$x
+         n=$( grep -c ^ /tmp/middle$x)
+         m=$( expr $n / $b )
+         start_print=$( echo "$(( ($a - 1) * $m + 1 ))")
+         end_print=$(expr $a \* $m )
+         cat /tmp/middle$x | head -n $end_print | tail -n +$start_print
+      else
+         n=$( grep -c ^ "$3") 
+         m=$( expr $n / $b ) 
+         start_print=$( echo "$(( ($a - 1) * $m ))")
+         end_print=$(expr $a \* $m )
+         head -n $end_print "$3" | tail -n +$start_print
+      fi
+    ;;
+esac 
+
