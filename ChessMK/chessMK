@@ -1,11 +1,18 @@
 #!/bin/bash
 
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+WHITE='\033[0;39m'
+NC='\033[0m'
+colours=false
+pattern="[a-h][1-8] [a-h][1-8]"
 turn=1
 num_rows=9
 move_valid=false
 game_over=false
 plPiece=false
 other_player=false
+file=""
 declare -A table
 
 # Creates chessboard
@@ -58,14 +65,37 @@ CreateTable () {
 
 # Draw chessboard 
 DrawTable() {
-  for ((i=9;i>=1;i--)) do
+if [[ $colours = true ]] ; then
+    for ((i=9;i>=2;i--)) do
+        printf '\n'
+        for ((j=1;j<=9;j++)) do
+           if [[ ${table[$i,$j]} =~ [a-z] ]] ; then
+              printf "${RED}${table[$i,$j]}${NC} "
+           elif [[ ${table[$i,$j]} =~ [A-Z] ]] ; then
+             printf "${BLUE}${table[$i,$j]}${NC} "
+           else
+            printf "${WHITE}${table[$i,$j]}${NC} "
+           fi
+        done
+    done
+    printf '\n'
+    for ((j=1;j<=9;j++)) do
+       printf "${table[1,$j]} "
+    done
+    printf '\n'
+    printf '\n'
+  else
+   for ((i=9;i>=1;i--)) do
       printf '\n'
       for ((j=1;j<=9;j++)) do
           printf "${table[$i,$j]} "
-      done    
-  done
-  printf '\n'
-  printf '\n'
+      done
+   done
+   printf '\n'
+   printf '\n'
+  fi
+
+
 }
 
 # Answer if player has a piece on exact spot - writes it into plPiece variable
@@ -77,16 +107,16 @@ IsTherePlPiece() {
 #pl1
  if [ "$2" = 1 ] ; then
     if [[ ${table[$o1,$o2]} =~ [A-Z] ]] ; then
-       plPiece=true;
+       return 0
     else
-       plPiece=false;
+       return 1
     fi
 #pl2
  else
    if [[ ${table[$o1,$o2]} =~ [a-z] ]] ; then 
-       plPiece=true;
+       return 0
     else
-       plPiece=false;
+       return 1
     fi
  fi
 }
@@ -104,43 +134,33 @@ CheckPawnMove() {
   if [[ $2 = 1 ]] ; then
 # 2 steps from first postion
      if [ $old1 = 2 ] && [ $new1 = 4 ] && [ $old2 = $new2 ] ; then
-         IsTherePlPiece $new2$new1 1
-         IsTherePlPiece $new2$new1 2
-         if [ $plPiece = false ] ; then 
-              move_valid=true
-              return
-         fi
+        if  ! IsTherePlPiece $new2$new1 1 && ! IsTherePlPiece $new2$new1 2; then 
+              return 0
+        fi
      fi  
 # 1 step ahead
-     if  [ $new1 = $(expr $old1 + 1) ] && [ $old2 = $new2 ] ; then
-         IsTherePlPiece $new2$new1 1
-         IsTherePlPiece $new2$new1 2
-         if [ $plPiece = false ] ; then
-              move_valid=true
-              return
-         fi
+     if  [ $new1 = $(expr $old1 + 1) ] && [ $old2 = $new2 ] ; then      
+        if  ! IsTherePlPiece $new2$new1 1 && ! IsTherePlPiece $new2$new1 2; then 
+              return 0
+        fi 
      fi
   else 
 # Player 2
 # 2 steps from first position
-         if [ $old1 = 7 ] && [ $new1 = 5 ] && [ $old2 = $new2 ] ; then
-         IsTherePlPiece $new2$new1 2
-         IsTherePlPiece $new2$new1 1
-         if [ $plPiece = false ] ; then
-              move_valid=true
-              return
-         fi
+     if [ $old1 = 7 ] && [ $new1 = 5 ] && [ $old2 = $new2 ] ; then
+        if  ! IsTherePlPiece $new2$new1 1 && ! IsTherePlPiece $new2$new1 2; then 
+              return 0
+        fi
      fi
 # 1 step ahead
      if  [ $new1 = $(expr $old1 - 1) ] && [ $old2 = $new2 ] ; then
-         IsTherePlPiece $new2$new1 1
-         IsTherePlPiece $new2$new1 2
-         if [ $plPiece = false ] ; then
-              move_valid=true
-              return
-         fi
+        if ! IsTherePlPiece $new2$new1 1 && ! IsTherePlPiece $new2$new1 2; then 
+              return 0
+        fi
      fi
   fi
+# move not found
+  return 1
 }
  
 # Argumets move and player
@@ -154,37 +174,31 @@ CheckPawnMove2() {
   new1=${move:4:1}
 # Player 1
   if [ $2 = 1 ] ; then
-    if  [ $new1 = $(expr $old1 + 1) ] && [ $old2 = $(expr $new2 + 1) ] ; then
-         IsTherePlPiece $new$new1 2
-         if [ $plPiece = true ] ; then
-              move_valid=true
-              return
+    if  [ $new1 = $(expr $old1 + 1) ] && [ $new2 = $(expr $old2 + 1) ] ; then
+         if IsTherePlPiece $new2$new1 2; then
+           return 0
          fi
      fi 
-     if  [ $new1 = $(expr $old1 + 1) ] && [ $old2 = $(expr $new2 - 1) ] ; then
-         IsTherePlPiece $new$new1 2
-         if [ $plPiece = true ] ; then
-              move_valid=true
-              return
+     if  [ $new1 = $(expr $old1 + 1) ] && [ $new2 = $(expr $old2 - 1) ] ; then
+         if IsTherePlPiece $new2$new1 2; then
+           return 0
          fi
      fi
 # Player 2
   else
-    if  [ $new1 = $(expr $old1 - 1) ] && [ $old2 = $(expr $new2 + 1) ] ; then
-         IsTherePlPiece $new2$new1 1
-         if [ $plPiece = true ] ; then
-              move_valid=true
-              return
+    if  [ $new1 = $(expr $old1 - 1) ] && [ $new2 = $(expr $old2 + 1) ] ; then
+         if IsTherePlPiece $new2$new1 1; then
+           return 0
          fi
      fi
-     if  [ $new1 = $(expr $old1 - 1) ] && [ $old2 = $(expr $new2 - 1) ] ; then
-         IsTherePlPiece $new2$new1 1
-         if [ $plPiece = true ] ; then
-              move_valid=true
-              return
+     if  [ $new1 = $(expr $old1 - 1) ] && [ $new2 = $(expr $old2 - 1) ] ; then
+         if IsTherePlPiece $new2$new1 1; then
+           return 0
          fi
      fi
   fi
+#move not found
+  return 1
 }
 
 # Argumets move and player 
@@ -203,41 +217,33 @@ CheckRookMove() {
       if [ $old2 -lt $new2 ] ; then
            col_diff=$(expr $new2 - $old2)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $(expr $old2 + $i)$new1 1
-                if [ $plPiece = true ] ; then
-                   return 
+                if IsTherePlPiece $(expr $old2 + $i)$new1 1; then
+                   return 1 
                 fi
-                IsTherePlPiece $(expr $old2 + $i)$new1 2
-                if [ $plPiece = true ] ; then
-                   return 
+                if IsTherePlPiece $(expr $old2 + $i)$new1 2; then
+                   return 1
                 fi
            done    
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return 
+           if IsTherePlPiece $new2$new1 1; then 
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi     
 # Move left         
       if [ $old2 -gt $new2 ] ; then
            col_diff=$(expr $old2 - $new2)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $(expr $old2 - $i)$new1 1
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $(expr $old2 - $i)$new1 1; then
+                   return 1 
                 fi
-                IsTherePlPiece $(expr $old2 - $i)$new1 2
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $(expr $old2 - $i)$new1 2; then
+                   return 1
                 fi
-           done
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return
+           done    
+           if IsTherePlPiece $new2$new1 1; then 
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi     
    fi
 # Move in column
@@ -246,41 +252,33 @@ CheckRookMove() {
       if [ $old1 -lt $new1 ] ; then
            col_diff=$(expr $new1 - $old1)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $old2$(expr $old1 + $i) 1
-                if [ $plPiece = true ] ; then
-                   return
-           fi     
-                IsTherePlPiece $old2$(expr $old1 + $i) 2
-           if [ $plPiece = true ] ; then
-                   return
-           fi
+                if IsTherePlPiece $old2$(expr $old1 + $i) 1; then
+                   return 1
+                fi     
+                if IsTherePlPiece $old2$(expr $old1 + $i) 2; then
+                   return 1
+                fi
            done
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return
+           if IsTherePlPiece $new2$new1 1; then 
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi
 # Move Down         
       if [ $old1 -gt $new1 ] ; then
            col_diff=$(expr $old1 - $new1)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $old2$(expr $old1 - $i) 1
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $old2$(expr $old1 - $i) 1; then
+                   return 1
                 fi 
-               IsTherePlPiece $old2$(expr $old1 - $i) 2
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $old2$(expr $old1 - $i) 2; then
+                   return 1
                 fi
            done
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return
+           if IsTherePlPiece $new2$new1 1; then
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi
    fi
 # Player 2
@@ -291,41 +289,33 @@ CheckRookMove() {
       if [ $old2 -lt $new2 ] ; then
            col_diff=$(expr $new2 - $old2)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $(expr $old2 + $i)$new1 1
-                if [ $plPiece = true ] ; then
-                   return 
+                if IsTherePlPiece $(expr $old2 + $i)$new1 1; then
+                   return 1
                 fi
-                IsTherePlPiece $(expr $old2 + $i)$new1 2
-                if [ $plPiece = true ] ; then
-                   return 
+                if IsTherePlPiece $(expr $old2 + $i)$new1 2; then
+                   return 1
                 fi
            done    
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return 
+           if IsTherePlPiece $new2$new1 1; then
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi     
 # Move left         
       if [ $old2 -gt $new2 ] ; then
            col_diff=$(expr $old2 - $new2)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $(expr $old2 - $i)$new1 1
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $(expr $old2 - $i)$new1 1; then
+                   return 1
                 fi
-                IsTherePlPiece $(expr $old2 - $i)$new1 2
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $(expr $old2 - $i)$new1 2; then
+                   return 1
                 fi
            done
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return
+           if IsTherePlPiece $new2$new1 1; then
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi     
    fi
 # Move in column
@@ -334,44 +324,37 @@ CheckRookMove() {
       if [ $old1 -lt $new1 ] ; then
            col_diff=$(expr $new1 - $old1)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $old2$(expr $old1 + $i) 1
-                if [ $plPiece = true ] ; then
-                   return
-           fi     
-                IsTherePlPiece $old2$(expr $old1 + $i) 2
-           if [ $plPiece = true ] ; then
-                   return
-           fi
+                if IsTherePlPiece $old2$(expr $old1 + $i) 1; then
+                   return 1
+                fi     
+                if IsTherePlPiece $old2$(expr $old1 + $i) 2; then
+                   return 1
+                fi
            done
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return
+           if IsTherePlPiece $new2$new1 1; then
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi
 # Move Down         
       if [ $old1 -gt $new1 ] ; then
            col_diff=$(expr $old1 - $new1)
            for ((i=1;i<col_diff;i++)) do
-                IsTherePlPiece $old2$(expr $old1 - $i) 1
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $old2$(expr $old1 - $i) 1; then
+                   return 1
                 fi 
-               IsTherePlPiece $old2$(expr $old1 - $i) 2
-                if [ $plPiece = true ] ; then
-                   return
+                if IsTherePlPiece $old2$(expr $old1 - $i) 2; then
+                   return 1
                 fi
            done
-           IsTherePlPiece $new2$new1 1
-           if [ $plPiece = true ] ; then
-                   return
+           if IsTherePlPiece $new2$new1 1; then
+              return 1
            fi
-           move_valid=true;
-           return;
+           return 0
       fi
    fi
 fi
+return 1
 }
 
 # Argumets move and player
@@ -385,90 +368,73 @@ CheckKnightMove() {
 # Player 1
   if [ $2 = 1 ] ; then
 # New spot occupied by pl1 piece
-       IsTherePlPiece $new2$new1 1
-       if [ $plPiece = true ] ; then
-          return
+       if IsTherePlPiece $new2$new1 1; then
+         return 1
        fi
 # Move Up 2
   if [ $(expr $new2 - $old2) = 2 ] && [ $(expr $new1 - $old1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   if [ $(expr $new2 - $old2) = 2 ] && [ $(expr $old1 - $new1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Move down 2
   if [ $(expr $old2 - $new2) = 2 ] && [ $(expr $new1 - $old1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0 
   fi
   if [ $(expr $old2 - $new2) = 2 ] && [ $(expr $old1 - $new1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Move right 2
   if [ $(expr $new1 - $old1) = 2 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   if [ $(expr $new1 - $old1) = 2 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Move left 2
-  if [ $(expr $old1 - $new1) = 2 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+  if [ $(expr $old1 - $new1) = 2 ] && [ $(expr $new2 - $old2) = 1 ] ; then 
+       return 0
   fi
   if [ $(expr $old1 - $new1) = 2 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Player 2
   else
 # New spot occupied by pl2 piece
-       IsTherePlPiece $new2$new1 2
-       if [ $plPiece = true ] ; then
-          return
+       if IsTherePlPiece $new2$new1 2; then
+          return 1
        fi
 # Move Up 2
   if [ $(expr $new2 - $old2) = 2 ] && [ $(expr $new1 - $old1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   if [ $(expr $new2 - $old2) = 2 ] && [ $(expr $old1 - $new1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Move down 2
   if [ $(expr $old2 - $new2) = 2 ] && [ $(expr $new1 - $old1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   if [ $(expr $old2 - $new2) = 2 ] && [ $(expr $old1 - $new1) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Move right 2
   if [ $(expr $new1 - $old1) = 2 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   if [ $(expr $new1 - $old1) = 2 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # Move left 2
   if [ $(expr $old1 - $new1) = 2 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   if [ $(expr $old1 - $new1) = 2 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
   fi
+return 1
 }
 
 # arguments move and player
@@ -481,9 +447,8 @@ CheckBishopMove() {
   new1=${move:4:1}
 # Player 1
   if [ $2 = 1 ] ; then
-     IsTherePlPiece $new2$new1 1
-     if [ $plPiece = true ] ; then
-          return
+     if IsTherePlPiece $new2$new1 1; then
+        return 1
      fi
      if [ $new1 -gt $old1 ] ; then
         row_diff=$(expr $new1 - $old1)
@@ -492,17 +457,14 @@ CheckBishopMove() {
            col_diff=$(expr $new2 - $old2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 1; then
+                     return 1
                   fi   
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 2; then
+                     return 1
                   fi 
                done
-               move_valid=true
-               return
+               return 0
            fi    
         fi
 # UpperLeft
@@ -510,17 +472,14 @@ CheckBishopMove() {
            col_diff=$(expr $old2 - $new2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
-                  fi
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
-                  fi
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 1; then
+                     return 1
+                  fi   
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 2; then
+                     return 1
+                  fi 
                done
-               move_valid=true
-               return
+               return 0
            fi
         fi
      fi
@@ -531,17 +490,14 @@ CheckBishopMove() {
            col_diff=$(expr $new2 - $old2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 1; then
+                     return 1
                   fi   
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 2; then
+                     return 1
                   fi 
                done
-               move_valid=true
-               return
+               return 0
            fi    
         fi
 # LowerLeft
@@ -549,44 +505,37 @@ CheckBishopMove() {
            col_diff=$(expr $old2 - $new2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 1; then
+                     return 1
                   fi
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 2; then
+                     return 0
                   fi
                done
-               move_valid=true
-               return
+               return 0
            fi
         fi
-     fi
+     fi 
 # Player 2 
   else
-     IsTherePlPiece $new2new1 2
-     if [ $plPiece = true ] ; then
-          return
+     if IsTherePlPiece $new2new1 2; then
+        return 1
      fi
      if [ $new1 -gt $old1 ] ; then
         row_diff=$(expr $new1 - $old1)
 # UpperRight
         if [ $new2 -gt $old2 ] ; then
            col_diff=$(expr $new2 - $old2)
-           if [ $col_diff = $row_diff ] ; then
+           if [[ $col_diff = $row_diff ]] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 1; then
+                     return 1
                   fi   
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 + $i) 2; then
+                     return 1
                   fi 
                done
-               move_valid=true
-               return
+               return 0
            fi    
         fi
 # UpperLeft
@@ -594,17 +543,14 @@ CheckBishopMove() {
            col_diff=$(expr $old2 - $new2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
-                  fi
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
-                  fi
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 1; then
+                     return 1
+                  fi   
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 + $i) 2; then
+                     return 1
+                  fi 
                done
-               move_valid=true
-               return
+               return 0
            fi
         fi
      fi
@@ -615,17 +561,14 @@ CheckBishopMove() {
            col_diff=$(expr $new2 - $old2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 1; then
+                     return 1
                   fi   
-                  IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 + $i)$(expr $old1 - $i) 2; then
+                     return 1
                   fi 
                done
-               move_valid=true
-               return
+               return 0
            fi    
         fi
 # LowerLeft
@@ -633,21 +576,20 @@ CheckBishopMove() {
            col_diff=$(expr $old2 - $new2)
            if [ $col_diff = $row_diff ] ; then
                for((i=1;i<col_diff;i++)) do
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 1
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 1; then
+                     return 1
                   fi
-                  IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 2
-                  if [ $plPiece = true ] ; then
-                     return
+                  if IsTherePlPiece $(expr $old2 - $i)$(expr $old1 - $i) 2; then
+                     return 0
                   fi
                done
-               move_valid=true
-               return
+               return 0
            fi
         fi
      fi
   fi
+# move not found
+  return 1 
 }
 
 # arguments move and player
@@ -666,97 +608,78 @@ CheckKingMove() {
   new1=${move:4:1}
 # Player 1
   if [ $2 = 1 ] ;  then
-     IsTherePlPiece $new2$new1 1
-     if [ $plPiece = true ] ; then 
-        return
+     if IsTherePlPiece $new2$new1 1; then 
+        return 1
      fi
-
 # up left
   if [ $(expr $old1 - $new1) = 1 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+       return 0
   fi
 # up 
   if [ $old1 = $new1 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # up right
   if [ $(expr $new1 - $old1) = 1 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # right
   if [ $(expr $new1 - $old1) = 1 ] && [  $new2 = $old2 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # down right
   if [ $(expr $new1 - $old1) = 1 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # down
   if [  $old1 = $new1 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # down left
   if [ $(expr $old1 - $new1) = 1 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # left   
   if [ $(expr $old1 - $new1) = 1 ] && [  $new2 = $old2 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # Player 2
   elif [[ $2 = 2 ]] ; then
-     IsTherePlPiece $new2$new1 2
-     if [ $plPiece = true ] ; then 
-        return
+     if IsTherePlPiece $new2$new1 2; then 
+         return 1
      fi
 
 # up left
   if [ $(expr $old1 - $new1) = 1 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # up 
   if [ $old1 = $new1 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # up right
   if [ $(expr $new1 - $old1) = 1 ] && [ $(expr $new2 - $old2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # right
   if [ $(expr $new1 - $old1) = 1 ] && [  $new2 = $old2 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # down right
   if [ $(expr $new1 - $old1) = 1 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # down
   if [  $old1 = $new1 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # down left
   if [ $(expr $old1 - $new1) = 1 ] && [ $(expr $old2 - $new2) = 1 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
 # left   
   if [ $(expr $old1 - $new1) = 1 ] && [  $new2 = $old2 ] ; then
-       move_valid=true
-       return
+        return 0
   fi
   fi 
 }
@@ -765,61 +688,74 @@ CheckKingMove() {
 # finds a piece and player which is making a move
 CheckMove() {
 # get single char from move for easier work
-  plPiece=false
+# plPiece=false
   move="$1"
   i=$(echo ${move:0:1} | tr [a-h] [2-9])
   j=$(echo ${move:1:1} | tr [1-8] [2-9])
 # pawn
   if [[ ${table[$j,$i]} = [Pp] ]] ; then 
-     CheckPawnMove "$1" $2 
-     if [ $move_valid = false ] ; then
-        CheckPawnMove2 "$1" $2
+     if CheckPawnMove "$1" $2 || CheckPawnMove2 "$1" $2; then
+       return 0
+     else 
+       return 1
      fi
-     return
   fi
 #rook
   if [[ ${table[$j,$i]} = [Rr] ]] ; then
-     CheckRookMove "$1" $2
-     return
+     if CheckRookMove "$1" $2; then
+       return 0
+     else 
+       return 1
+     fi
   fi
-#knight
+#knight 
   if [[ ${table[$j,$i]} = [Nn] ]] ; then
-     CheckKnightMove "$1" $2
-     return
+     if CheckKnightMove "$1" $2; then
+       return 0
+     else 
+       return 1
+     fi
   fi
 #bischop
   if [[ ${table[$j,$i]} =~ [Bb] ]] ; then
-     CheckBishopMove "$1" $2
-     return
+     if CheckBishopMove "$1" $2; then
+       return 0
+     else 
+       return 1
+     fi
   fi
 #queen
   if [[ ${table[$j,$i]} =~ [Qq] ]] ; then
-     CheckQueenMove "$1" $2
-     return
+     if CheckQueenMove "$1" $2; then
+       return 0
+     else 
+       return 1
+     fi
   fi
 #king
   if [[ ${table[$j,$i]} =~ [Kk] ]] ; then
-     CheckKingMove "$1" $2
-     return
+     if CheckKingMove "$1" $2; then
+       return 0
+     else 
+       return 1
+     fi
   fi
 } 
 
 # makes a move and checks if king was taken - game over
 # argument is move
 MakeMove() {
-  other_player=false 
   move=$1  
   old2=$(echo ${move:0:1} | tr [a-h] [2-9])
   old1=$(echo ${move:1:1} | tr [1-8] [2-9])
   new2=$(echo ${move:3:1} | tr [a-h] [2-9])
   new1=$(echo ${move:4:1} | tr [1-8] [2-9])
+# other player move
   if [[ $turn = 1 ]] && [[ ${table[$old1,$old2]} =~ [a-z] ]] ; then
-     other_player=true
-     return
+     return 1
   fi
   if [[ $turn = 2 ]] && [[ ${table[$old1,$old2]} =~ [A-Z] ]] ; then
-     other_player=true
-     return
+     return 1
   fi
   if [[ ${table[$new1,$new2]} = K ]] ; then
   printf "\n Player 2 WINS"
@@ -841,16 +777,16 @@ Pl1Turn() {
    while [ $move_valid = false ] ; do
       printf "Player1 move:"
       read move 
-      pattern="[a-h][1-8] [a-h][1-8]"
       if [[ $move =~ $pattern ]] ; then
-        CheckMove "$move" 1
-        if [[ $move_valid = true ]] ; then
-            MakeMove "$move" 1
-            if  [[ $other_player = true ]] ; then
-                move_valid=false
-                printf "Invalid move \n" 
-            echo "$move" >> /tmp/chessreplay$rand_num
-            fi
+        if CheckMove "$move" 1; then
+           if ! MakeMove "$move" 1; then
+               printf "Invalid move \n" 
+           else
+              move_valid=true 
+              if [[ $file != "" ]] ; then
+                 echo "$move" >> "$file"
+              fi
+           fi
         else
           printf "Invalid move \n"
         fi
@@ -867,17 +803,16 @@ Pl2Turn() {
    while [ $move_valid = false ] ; do
       printf "Player2 move:"
       read move 
-      pattern="[a-h][1-8] [a-h][1-8]"
       if [[ $move =~ $pattern ]] ; then
-        CheckMove "$move" 2
-        if [[ $move_valid = true ]] ; then
-            MakeMove "$move" 2
-            if  [[ $other_player = true ]] ; then
-                move_valid=false
-            printf "Invalid move \n" 
-            else
-            echo "$move" >> /tmp/chessreplay$rand_num
-            fi
+        if CheckMove "$move" 2; then
+           if ! MakeMove "$move" 2; then
+               printf "Invalid move \n" 
+           else
+              move_valid=true 
+              if [[ $file != "" ]] ; then
+                 echo "$move" >> "$file"
+              fi
+           fi
         else
           printf "Invalid move \n"
         fi
@@ -886,8 +821,24 @@ Pl2Turn() {
       fi
    done 
 }
-
-GameStart() {
+ 
+Pregame() {
+  printf "Do you want to save a replay? [y/n] \n"
+  read answer
+  while [[ ! $answer =~ [yYnN] ]] ; do 
+     printf "Answer y fo yes n no \n"
+     read answer
+  done
+  if [[ $answer =~ [Yy] ]]; then 
+     printf "Choose a file name\n"
+     read file
+     while [ -e $file ]; do 
+        printf "File already exists, choose a different name\n"
+        read file 
+     done
+  fi
+}
+Game() {
   turn=1
   while [[ $game_over = false ]] ; do
     if [[ $turn = 1 ]] ; then
@@ -898,17 +849,41 @@ GameStart() {
        turn=1
     fi 
   done
+  printf "Press ENTER to exit"
+  read x
 }
-#create game file with all moves
-rand_num=$RANDOM
-printf "Game %s \n" $rand_num
-while [ -e /tmp/chessreplay$rand_num ] ; do
-   rand_num=$(expr $rand_num + 1)
-  done
-touch /tmp/chessreplay$rand_num
-CreateTable
-DrawTable
-GameStart
-printf "Press any key to exit"
-read x
 
+GameReplay() {
+  if [ -e "$1" ]; then
+     CreateTable
+     DrawTable 
+     turn=1
+     cat "$1" | while read -r move ; do
+       sleep 2
+       MakeMove "$move" $turn
+       if [[ $turn = 1 ]] ; then 
+          turn=2
+       else 
+          turn=1 
+       fi
+     done 
+  printf "Press ENTER to exit"
+  read  x
+  else
+    printf "File doesn't exist \n"
+  fi 
+}
+if [[ $1 = "--replay-game" ]] ; then
+  if [[ $3 = "--colours" ]] ; then
+     colours=true
+  fi
+  GameReplay $2
+else 
+  if [[ $1 = "--colours" ]] ; then
+     colours=true
+  fi
+  Pregame
+  CreateTable
+  DrawTable
+  Game
+fi
