@@ -8,9 +8,7 @@ colours=false
 pattern="[a-h][1-8] [a-h][1-8]"
 turn=1
 num_rows=9
-move_valid=false
 game_over=false
-plPiece=false
 other_player=false
 file=""
 declare -A table
