@@ -1,14 +1,20 @@
 Dokumetace ChessMK 
 
-Program je pro dva hrace. Hraje  po siti, ale je mozne hrat i na jednom pocitaci. Pres sit prvni hrac posle druhemu jeho IP adresu a port. Druhy se pripoji  a hra zacina.
-Hru zacina player1 (server) a pak se zpravidla stridaji po tahu. Tvary tahu je dvojice: [a-h][1-8] [a-h][1-8] udavajici, 1. policko od se tahne 2. policko kam se tahne. Pokud dostane program jiny tvar tahu vypise "Invalid move format" a hrac tahne znova. Pokud je sice tvar spravny, ale tah neni podle pravidel, tak program vypise "Invalid move" a hrac opet tahne. 
-Cilem hry je sebrat souperova krale. Hra je udelana jako se hraji blitz turnaje na zivo, tedy neupozornuje na sach (ohrozeni) krale, hraci by v tomto ohledu meli byt obezretni celou dobu. Ve chvili kdy jeden z hracu sebere krale druhemu hra konci.
+Program je pro dva hrace. Hraje se na jednom  pocitaci v terminalu.
+Tvar tahu je dvojice: [a-h][1-8] [a-h][1-8] udavajici, 1. policko od se tahne 2. policko kam se tahne.
+Pokud dostane program jiny tvar tahu vypise "Invalid move format" a hrac tahne znova.
+Pokud je sice tvar spravny, ale tah neni podle pravidel, tak program vypise "Invalid move" a hrac opet tahne. 
+Cilem hry je sebrat souperova krale.
+Hra je udelana jako se hraji blitz turnaje na zivo, tedy neupozornuje na sach (ohrozeni) krale, hraci by v tomto ohledu meli byt obezretni celou dobu. Ve chvili kdy jeden z hracu sebere krale druhemu hra konci.
 Hry se ukladani do adresare /tmp. Kazda hra ma sve cislo, ktere se vypise na zacatku hry a pote je pod timto cislem ulozena v /tmp/chessreplay$cislohry.
 
 Program samotny funguje v nekolika castech: 
-0) Vytvori si soubor na ulozeni hry
+0) Pokud hraci chteji mohou si ulozit hru na pozdejsi prehrani
 1) Vytvori sachovnici s figurkami viz. CreateTable
 2) Vykresli pocatecni stav sachovnice viz. DrawTable
 3) Zacne hra - po kazdem tahu jednoho z hracu se vykresli sachovnice znova
 4) Konec hry sebranim krale
-
+ 
+Moznosti parametru:
+1) --replay-game file_name - prehraje hru ulozenou v souboru file_name
+2) --colours - figurky hracu maji rozeznatelne barvy
