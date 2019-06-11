@@ -18,3 +18,4 @@ Program samotny funguje v nekolika castech:
 Moznosti parametru:
 1) --replay-game file_name - prehraje hru ulozenou v souboru file_name
 2) --colours - figurky hracu maji rozeznatelne barvy
+Pri pouziti obou parametru se pisi ve poradi uvedenem vyse.
